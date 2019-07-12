@@ -1,4 +1,4 @@
-dns_attackers
+dnsAttacker
 ===
 
 
